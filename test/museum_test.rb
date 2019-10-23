@@ -22,6 +22,7 @@ class MuseumTest < Minitest::Test
   def test_it_initializes_with_attributes
     assert_equal "Denver Museum of Nature and Science", @dmns.name
     assert_equal [], @dmns.exhibits
+    assert_equal [], @dmns.patrons
   end
 
   def test_it_can_add_exhibits
@@ -40,5 +41,55 @@ class MuseumTest < Minitest::Test
     @sally.add_interest("IMAX")
     assert_equal [@gems_and_minerals, @dead_sea_scrolls], @dmns.recommend_exhibits(@bob)
     assert_equal [@imax], @dmns.recommend_exhibits(@sally)
+  end
+
+  def test_it_can_admit_patrons
+    @dmns.admit(@bob)
+    @dmns.admit(@sally)
+    assert_equal [@bob, @sally], @dmns.patrons
+  end
+
+  def test_it_can_tell_if_patron_interested_in_given_exhibit
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @dmns.admit(@bob)
+    @dmns.admit(@sally)
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("Gems and Minerals")
+    @sally.add_interest("Dead Sea Scrolls")
+    assert_equal true, @dmns.interested?(@bob, @gems_and_minerals)
+    assert_equal false, @dmns.interested?(@sally, @gems_and_minerals)
+    assert_equal true, @dmns.interested?(@bob, @dead_sea_scrolls)
+    assert_equal true, @dmns.interested?(@sally, @dead_sea_scrolls)
+  end
+
+  def test_it_can_find_all_patrons_who_like_exhibit
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @dmns.admit(@bob)
+    @dmns.admit(@sally)
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("Gems and Minerals")
+    @sally.add_interest("Dead Sea Scrolls")
+    assert_equal [@bob, @sally], @dmns.patrons_who_like_exhibit(@dead_sea_scrolls)
+    assert_equal [@bob], @dmns.patrons_who_like_exhibit(@gems_and_minerals)
+  end
+
+  def test_it_can_find_patrons_by_exhibit_interests
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @dmns.admit(@bob)
+    @dmns.admit(@sally)
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("Gems and Minerals")
+    @sally.add_interest("Dead Sea Scrolls")
+    expected_hash = {
+                      @gems_and_minerals => [@bob],
+                      @dead_sea_scrolls => [@bob, @sally]
+                    }
+    assert_equal expected_hash, @dmns.patrons_by_exhibit_interest
   end
 end
