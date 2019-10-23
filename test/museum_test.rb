@@ -110,6 +110,12 @@ class MuseumTest < Minitest::Test
     assert_equal [@dead_sea_scrolls, @gems_and_minerals], @dmns.interested_exhibits_by_cost(@morgan)
   end
 
+  def test_it_can_tell_if_patron_can_afford_exhibit
+    assert_equal true, @dmns.can_afford?(@sally, @imax)
+    assert_equal false, @dmns.can_afford?(@bob, @imax)
+  end
+
+
   def test_its_patrons_attend_exhibits_from_most_to_least_expensive
     @dmns.add_exhibit(@gems_and_minerals)
     @dmns.add_exhibit(@dead_sea_scrolls)
