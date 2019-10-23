@@ -11,8 +11,10 @@ class MuseumTest < Minitest::Test
     @gems_and_minerals = Exhibit.new("Gems and Minerals", 0)
     @dead_sea_scrolls = Exhibit.new("Dead Sea Scrolls", 10)
     @imax = Exhibit.new("IMAX", 15)
-    @bob = Patron.new("Bob", 20)
+    @bob = Patron.new("Bob", 10)
     @sally = Patron.new("Sally", 20)
+    @tj = Patron.new("TJ", 7)
+    @morgan = Patron.new("Morgan", 15)
   end
 
   def test_it_exists
@@ -23,6 +25,9 @@ class MuseumTest < Minitest::Test
     assert_equal "Denver Museum of Nature and Science", @dmns.name
     assert_equal [], @dmns.exhibits
     assert_equal [], @dmns.patrons
+    assert_equal 0, @dmns.revenue
+    empty_hash = {}
+    assert_equal empty_hash, @dmns.patrons_of_exhibits
   end
 
   def test_it_can_add_exhibits
@@ -91,5 +96,102 @@ class MuseumTest < Minitest::Test
                       @dead_sea_scrolls => [@bob, @sally]
                     }
     assert_equal expected_hash, @dmns.patrons_by_exhibit_interest
+  end
+
+  def test_it_can_sort_interested_exhibits_from_costliest_to_cheapest
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("IMAX")
+    assert_equal [@imax, @dead_sea_scrolls], @dmns.interested_exhibits_by_cost(@bob)
+    @morgan.add_interest("Gems and Minerals")
+    @morgan.add_interest("Dead Sea Scrolls")
+    assert_equal [@dead_sea_scrolls, @gems_and_minerals], @dmns.interested_exhibits_by_cost(@morgan)
+  end
+
+  def test_it_can_tell_if_patron_can_afford_exhibit
+    assert_equal true, @dmns.can_afford?(@sally, @imax)
+    assert_equal false, @dmns.can_afford?(@bob, @imax)
+  end
+
+
+  def test_its_patrons_attend_exhibits_from_most_to_least_expensive
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @tj.add_interest("IMAX")
+    @tj.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@tj)
+    assert_equal 7, @tj.spending_money
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("IMAX")
+    @dmns.admit(@bob)
+    assert_equal 0, @bob.spending_money
+    @sally.add_interest("IMAX")
+    @sally.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@sally)
+    assert_equal 5, @sally.spending_money
+    @morgan.add_interest("Gems and Minerals")
+    @morgan.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@morgan)
+    assert_equal 5, @morgan.spending_money
+  end
+
+  def test_it_can_record_patron_attendance
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @tj.add_interest("IMAX")
+    @tj.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@tj)
+    empty_hash = {}
+    assert_equal empty_hash, @dmns.patrons_of_exhibits
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("IMAX")
+    @dmns.admit(@bob)
+    attendance_hash_1 = {
+                          @dead_sea_scrolls => [@bob]
+                        }
+    assert_equal attendance_hash_1, @dmns.patrons_of_exhibits
+    @sally.add_interest("IMAX")
+    @sally.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@sally)
+    attendance_hash_2 = {
+                          @dead_sea_scrolls => [@bob],
+                          @imax => [@sally]
+                        }
+    assert_equal attendance_hash_2, @dmns.patrons_of_exhibits
+    @morgan.add_interest("Gems and Minerals")
+    @morgan.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@morgan)
+    attendance_hash_3 = {
+                          @dead_sea_scrolls => [@bob, @morgan],
+                          @imax => [@sally],
+                          @gems_and_minerals => [@morgan]
+                        }
+    assert_equal attendance_hash_3, @dmns.patrons_of_exhibits
+  end
+
+  def test_it_tracks_revenue_from_exhibit_attendance
+    @dmns.add_exhibit(@gems_and_minerals)
+    @dmns.add_exhibit(@dead_sea_scrolls)
+    @dmns.add_exhibit(@imax)
+    @tj.add_interest("IMAX")
+    @tj.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@tj)
+    assert_equal 0, @dmns.revenue
+    @bob.add_interest("Dead Sea Scrolls")
+    @bob.add_interest("IMAX")
+    @dmns.admit(@bob)
+    assert_equal 10, @dmns.revenue
+    @sally.add_interest("IMAX")
+    @sally.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@sally)
+    assert_equal 25, @dmns.revenue
+    @morgan.add_interest("Gems and Minerals")
+    @morgan.add_interest("Dead Sea Scrolls")
+    @dmns.admit(@morgan)
+    assert_equal 35, @dmns.revenue
   end
 end
